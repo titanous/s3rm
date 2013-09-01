@@ -14,7 +14,7 @@ import (
 var batches = make(chan []string)
 var logs = make(chan string)
 var bucket *s3.Bucket
-var workers = flag.Int("workers", 10, "")
+var workers = flag.Int("workers", 10, "The number of workers to use for deletion")
 var done sync.WaitGroup
 
 func main() {
@@ -28,6 +28,7 @@ func main() {
 	}
 	done.Add(*workers)
 
+	var count int
 	var marker string
 	for {
 		var prefix string
@@ -48,6 +49,7 @@ func main() {
 		}
 
 		batches <- keys
+		count += len(keys)
 
 		if !list.IsTruncated {
 			break
@@ -56,6 +58,7 @@ func main() {
 	}
 	close(batches)
 	done.Wait()
+	log.Printf("Delete %d objects", count)
 }
 
 func logLines() {
